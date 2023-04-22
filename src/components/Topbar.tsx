@@ -148,6 +148,15 @@ const Topbar: React.FC<TopbarProps> = ({
                   });
                 }}
               ></i>
+              <i
+                className={`fa-solid mr-2 w-3 fa-person ml-2 cursor-pointer text-gray transform transition duration-300 hover:scale-125 hover:font-bold`}
+                onClick={() => {
+                  setUserInfo({
+                    ...userInfo,
+                    theme: userInfo.theme == 'retro' ? 'modern' : 'retro'
+                  });
+                }}
+              ></i>
             </div>
             <div className='gap-3 flex flex-row items-center'>
               <i

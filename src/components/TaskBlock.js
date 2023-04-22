@@ -19,19 +19,23 @@ export default function TaskBlock({
   someTaskActive,
   index
 }) {
+  let retro = userInfo.theme == 'retro';
+  let modern = userInfo.theme == 'modern';
   return (
     <div
       key={task.id}
       className={`relative aspect-w-1 aspect-h-1 shadow-gray-500 transition-height duration-1000 ease-in-out
-  ${pointMap[task.pointValue]}
   ${someTaskActive && !isActive && 'transform transition duration-300 hidden'} 
   ${isActive && 'absolute top-3 left-3'}`}
-      style={{ aspectRatio: '1 / 1' }}
+      style={{ aspectRatio: '6 / 5' }}
     >
       <div
-        className={`group bg-dark-blue border h-full border-gray-700 cursor-pointer hover:bg-gray-600      
+        className={`group bg-dark${retro && '-blue '} ${
+          retro && 'hover:bg-gray-600'
+        } ${modern && 'hover-gray'}
+        } border h-full border-gray-700 cursor-pointer hover:bg-gray-600      
   ${task.id == userInfo.activeTaskId ? '!bg-blue-950' : ''}
-  ${task.labels.includes('completed') ? '!bg-green-950' : ''}
+  ${task.labels.includes('completed') && (retro ? '!bg-green-950' : 'bg-green')}
   ${task.labels.includes('in-progress') ? '!bg-orange-800' : ''}
   `}
         onClick={() => activateTask(task, index)}
@@ -41,8 +45,17 @@ export default function TaskBlock({
             editingTask?.id == task.id ? '' : 'p-3'
           }`}
         >
+          {/* <div
+            className={`blur-on-hover w-full h-full overflow-hidden flex flex-col justify-center`}
+          > */}
           {editingTask?.id != task.id ? (
-            <span>{task.content || '|' + task.name + '|'}</span>
+            <span
+              className={`${
+                retro ? '' : 'multi-line-truncate w-full inline-block'
+              }`}
+            >
+              {task.content || '|' + task.name + '|'}
+            </span>
           ) : (
             <textarea
               value={editingTask.content}
@@ -107,14 +120,21 @@ export default function TaskBlock({
               }}
             />
           )}
+          {/* </div> */}
           <div
-            className={`w-full flex items-center absolute top-3 left-3 space-x-2`}
+            className={`w-full flex items-center absolute top-3 left-3 space-x-2 ${
+              modern ? 'circle-pattern-on-hover' : ''
+            }`}
           >
             {Array(task.pointValue)
               .fill()
               .map((_, index) => {
                 console.log(task.id, index);
-                return <span key={index}>*</span>;
+                return (
+                  <span key={index}>
+                    <i class='fa-solid fa-circle font-8 text-offwhite'></i>
+                  </span>
+                );
               })}
           </div>
           <div
@@ -127,7 +147,9 @@ export default function TaskBlock({
             }`}
           >
             <i
-              className={`fa-solid fa-clock cursor-pointer text-gray w-5 h-5 mr-auto ml-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
+              className={`fa-solid fa-clock cursor-pointer ${
+                retro ? 'text-gray' : 'text-gray-light'
+              } w-5 h-5 mr-auto ml-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
               onClick={e => {
                 e.stopPropagation();
                 task._editingTimeEstimate = !task._editingTimeEstimate;
@@ -181,7 +203,9 @@ export default function TaskBlock({
             </span>
             <span className={`items-center text-gray w-5 h-5`}>
               <i
-                className={`fa-solid fa-arrow-right cursor-pointer text-gray w-5 h-5 absolute transform transition duration-300 hover:scale-125 hover:font-bold`}
+                className={`fa-solid fa-arrow-right cursor-pointer ${
+                  retro ? 'text-gray' : 'text-gray-light'
+                } w-5 h-5 absolute transform transition duration-300 hover:scale-125 hover:font-bold`}
                 onClick={e => {
                   e.stopPropagation();
                   client.tasks.postpone.mutate({
@@ -192,7 +216,9 @@ export default function TaskBlock({
               ></i>
             </span>
             <i
-              className={`fa-solid fa-edit cursor-pointer text-gray w-5 h-5 ml-auto mr-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
+              className={`fa-solid fa-edit cursor-pointer ${
+                retro ? 'text-gray' : 'text-gray-light'
+              } w-5 h-5 ml-auto mr-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
               onClick={e => {
                 e.stopPropagation();
                 editingTask?.id != task.id
@@ -213,7 +239,9 @@ export default function TaskBlock({
             <span></span>
             <span className='flex items-center justify-center flex-col'>
               <i
-                className={`fa-solid fa-plus cursor-pointer text-gray w-5 h-5 ml-auto mr-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
+                className={`fa-solid fa-plus cursor-pointer ${
+                  retro ? 'text-gray' : 'text-gray-light'
+                } w-5 h-5 ml-auto mr-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
                 onClick={e => {
                   e.stopPropagation();
                   task.pointValue += 1;
@@ -224,7 +252,9 @@ export default function TaskBlock({
                 }}
               ></i>
               <i
-                className={`fa-solid fa-minus cursor-pointer text-gray w-5 h-5 mr-auto mr-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
+                className={`fa-solid fa-minus cursor-pointer ${
+                  retro ? 'text-gray' : 'text-gray-light'
+                } w-5 h-5 mr-auto mr-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
                 onClick={e => {
                   e.stopPropagation();
                   task.pointValue -= 1;
@@ -247,7 +277,9 @@ export default function TaskBlock({
             }`}
           >
             <i
-              className={`fa-solid fa-close cursor-pointer text-gray w-5 h-5 mr-auto ml-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
+              className={`fa-solid fa-close cursor-pointer ${
+                retro ? 'text-gray' : 'text-gray-light'
+              } w-5 h-5 mr-auto ml-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
               onClick={e => (
                 e.stopPropagation(),
                 api
@@ -265,7 +297,9 @@ export default function TaskBlock({
             ></i>
             <span className={`items-center text-gray w-5 h-5`}>
               <i
-                className={`fa-solid fa-circle-half-stroke cursor-pointer text-gray w-5 h-5 absolute transform transition duration-300 hover:scale-125 hover:font-bold`}
+                className={`fa-solid fa-circle-half-stroke cursor-pointer ${
+                  retro ? 'text-gray' : 'text-gray-light'
+                } w-5 h-5 absolute transform transition duration-300 hover:scale-125 hover:font-bold`}
                 onClick={e => toggleInProgress(task, e)}
               ></i>
             </span>

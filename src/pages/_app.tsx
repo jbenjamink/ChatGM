@@ -5,9 +5,9 @@ import { SessionProvider } from 'next-auth/react';
 import React, { useEffect } from 'react';
 import { trpc } from '../utils/trpc';
 import DataFetcher from '../components/DataFetcher';
-import Wrapper from '../components/Wrapper';
-import { Provider } from 'react-redux';
-import store from './store';
+import ThemeContainer from '../components/ThemeContainer';
+// import { Provider } from 'react-redux';
+// import store from './store';
 
 interface C {
   key?: string;
@@ -66,9 +66,9 @@ const App: AppType = ({ Component, pageProps }: AppProps) => {
           {/* <Component /> */}
           {(mergedProps: any) => {
             return (
-              <Wrapper selected={selected} setSelected={setSelected}>
+              <ThemeContainer>
                 <Component {...mergedProps} />
-              </Wrapper>
+              </ThemeContainer>
             );
           }}
         </DataFetcher>
