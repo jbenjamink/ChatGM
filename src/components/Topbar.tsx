@@ -157,6 +157,40 @@ const Topbar: React.FC<TopbarProps> = ({
                   });
                 }}
               ></i>
+              <div className={`rounded-lg`} role='group'>
+                <button
+                  className={`bg-green-950 p-3 border border-gray-900 rounded-l-lg transform transition duration-300 hover:scale-125 hover:font-bold ${
+                    activeProject?.showCompletedTasks
+                      ? 'brightness-200'
+                      : 'opacity-80'
+                  }`}
+                  onClick={async () => {
+                    setActiveProject({
+                      ...activeProject,
+                      showCompletedTasks: !activeProject.showCompletedTasks
+                    });
+                    await updateProjectMutation.mutateAsync({
+                      id: activeProject.id,
+                      showCompletedTasks: !activeProject.showCompletedTasks
+                    });
+                  }}
+                ></button>
+                <button
+                  className={`bg-dark-blue p-3 border border-gray-900 rounded-r-lg transform transition duration-300 hover:scale-125 hover:font-bold ${
+                    activeProject?.showIncompleteTasks ? 'brightness-200' : ''
+                  }`}
+                  onClick={async () => {
+                    setActiveProject({
+                      ...activeProject,
+                      showIncompleteTasks: !activeProject.showIncompleteTasks
+                    });
+                    await updateProjectMutation.mutateAsync({
+                      id: activeProject.id,
+                      showIncompleteTasks: !activeProject.showIncompleteTasks
+                    });
+                  }}
+                ></button>
+              </div>
             </div>
             <div className='gap-3 flex flex-row items-center'>
               <i

@@ -53,6 +53,18 @@ function ConversationLinkList({
         //   setActiveTask(tasks[activeTaskIndex + 1], activeTaskIndex + 1);
         // }
         break;
+      case '[':
+        setUserInfo({
+          ...userInfo,
+          hideSidebar: true
+        });
+        break;
+      case ']':
+        setUserInfo({
+          ...userInfo,
+          hideSidebar: false
+        });
+        break;
     }
   }, [c]);
 

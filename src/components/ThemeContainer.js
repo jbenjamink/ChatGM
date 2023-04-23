@@ -26,5 +26,5 @@ export default function ThemeContainer({ children }) {
     });
   }, [theme]);
 
-  return <div>{children}</div>;
+  return <>{children}</>;
 }

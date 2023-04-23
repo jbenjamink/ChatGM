@@ -1,5 +1,11 @@
+import { LinkedList } from '../lib/LinkedList';
+import { useEffect } from 'react';
+import ButtonGroup from './ButtonGroup';
+import { useState } from 'react';
+
 export default function TaskBlock({
-  task,
+  passedTask,
+  tasks,
   activateTask,
   editingTask,
   setEditingTask,
@@ -17,31 +23,79 @@ export default function TaskBlock({
   showIcons,
   onlyShowOnHover,
   someTaskActive,
-  index
+  index,
+  textareaRef,
+  submitTaskLock,
+  c,
+  router,
+  activeTask,
+  setActiveTask,
+  swapLeft,
+  swapRight
 }) {
-  let retro = userInfo.theme == 'retro';
-  let modern = userInfo.theme == 'modern';
+  let retro = true;
+  let modern = false;
+  const [task, setTask] = useState(passedTask);
+
+  if (task.id != passedTask.id) setTask(passedTask);
+
+  // setInterval(() => {
+  //   if (task.id != activeTask.id) setCounter(counter + 1);
+  //   console.log(counter);
+  // }, 1000);
+
+  useEffect(() => {
+    // Check if 'c' is not null before accessing its 'key' property
+    if (c && router.asPath == '/tasks') {
+      switch (c.key) {
+        case 'r':
+          break;
+      }
+    }
+  }, [c]);
+
+  useEffect(() => {
+    if (!activeTask) return;
+    setActiveTask({
+      ...activeTask,
+      isPaused: task.isPaused
+    });
+  }, [task.isPaused]);
+
   return (
     <div
       key={task.id}
-      className={`relative aspect-w-1 aspect-h-1 shadow-gray-500 transition-height duration-1000 ease-in-out
-  ${someTaskActive && !isActive && 'transform transition duration-300 hidden'} 
-  ${isActive && 'absolute top-3 left-3'}`}
+      className={`relative aspect-w-1 aspect-h-1 shadow-gray-500 transition-height duration-1000 ease-in-out 
+  ${
+    false &&
+    someTaskActive &&
+    !isActive &&
+    'transform transition duration-300 hidden'
+  } 
+  ${false && isActive && 'absolute top-3 left-3'}
+  `}
       style={{ aspectRatio: '6 / 5' }}
     >
       <div
         className={`group bg-dark${retro && '-blue '} ${
-          retro && 'hover:bg-gray-600'
-        } ${modern && 'hover-gray'}
-        } border h-full border-gray-700 cursor-pointer hover:bg-gray-600      
-  ${task.id == userInfo.activeTaskId ? '!bg-blue-950' : ''}
-  ${task.labels.includes('completed') && (retro ? '!bg-green-950' : 'bg-green')}
-  ${task.labels.includes('in-progress') ? '!bg-orange-800' : ''}
-  `}
+          retro ? 'hover:bg-gray-600' : ''
+        } ${
+          modern ? 'hover-gray' : ''
+        } border h-full border-gray-700 cursor-pointer hover:bg-gray-600 rounded-lg overflow-hidden relative ${
+          task.id == userInfo.activeTaskId ? '!bg-blue-950' : ''
+        } ${
+          task.labels?.includes('completed')
+            ? retro
+              ? isActive
+                ? '!bg-green-700'
+                : '!bg-green-950'
+              : 'bg-green'
+            : ''
+        } ${task.labels?.includes('in-progress') ? '!bg-orange-800' : ''}`}
         onClick={() => activateTask(task, index)}
       >
         <div
-          className={`group flex h-full flex-col justify-center gap-4 ${
+          className={`group flex h-full flex-col justify-center gap-4 overflow-hidden ${
             editingTask?.id == task.id ? '' : 'p-3'
           }`}
         >
@@ -55,11 +109,28 @@ export default function TaskBlock({
               }`}
             >
               {task.content || '|' + task.name + '|'}
+              <div
+                className={`w-full flex items-center space-x-2 ${
+                  modern ? 'circle-pattern-on-hover' : ''
+                }`}
+              >
+                {editingTask?.id != task.id &&
+                  Array(task.pointValue)
+                    .fill()
+                    .map((_, index) => {
+                      // console.log(task.id, index);
+                      return (
+                        <span key={index}>
+                          <i className='fa-solid fa-circle font-8 text-offwhite'></i>
+                        </span>
+                      );
+                    })}
+              </div>
             </span>
           ) : (
             <textarea
-              value={editingTask.content}
-              placeholder={editingTask.content}
+              value={editingTask?.content}
+              placeholder={editingTask?.content}
               onChange={e => (
                 e.stopPropagation(),
                 setEditingTask({
@@ -79,7 +150,7 @@ export default function TaskBlock({
                   }
                   api
                     .updateTask(task.id, {
-                      content: editingTask.content
+                      content: editingTask?.content
                     })
                     .then(updatedTask => {
                       setTasks(
@@ -87,10 +158,10 @@ export default function TaskBlock({
                       );
                       client.tasks.updateWhere.mutate({
                         where: {
-                          id: editingTask.id
+                          id: editingTask?.id
                         },
                         data: {
-                          name: editingTask.content
+                          name: editingTask?.content
                         }
                       });
                       setEditingTask(null);
@@ -106,8 +177,7 @@ export default function TaskBlock({
                 resize: 'none',
                 overflow: 'auto'
               }}
-              conversationId={undefined}
-              textareaRef={textareaRef}
+              textarearef={textareaRef}
               autoFocus={true}
               onFocus={e => {
                 const {
@@ -122,20 +192,34 @@ export default function TaskBlock({
           )}
           {/* </div> */}
           <div
-            className={`w-full flex items-center absolute top-3 left-3 space-x-2 ${
-              modern ? 'circle-pattern-on-hover' : ''
+            className={`absolute top-0 left-0 ${
+              task.id == editingTask?.id ? 'invisible' : ''
             }`}
           >
-            {Array(task.pointValue)
-              .fill()
-              .map((_, index) => {
-                console.log(task.id, index);
-                return (
-                  <span key={index}>
-                    <i class='fa-solid fa-circle font-8 text-offwhite'></i>
-                  </span>
-                );
-              })}
+            <ButtonGroup
+              classes={`z-20`}
+              task={task}
+              setTask={setTask}
+              client={client}
+              isActive={isActive}
+              editingTask={editingTask}
+            ></ButtonGroup>
+            <div
+              className={`text-gray p-1 text-sm w-full ${
+                isActive && task.id != editingTask?.id
+                  ? 'visible'
+                  : task.id == editingTask?.id
+                  ? 'invisible'
+                  : 'invisible group-hover:visible'
+              }`}
+            >
+              {task.timeEstimate
+                ? estimateDisplay(
+                    task.timeEstimate -
+                      (isActive ? activeTask.timeSpent : task.timeSpent)
+                  )
+                : ''}
+            </div>
           </div>
           <div
             className={`w-full flex items-center justify-between absolute top-3 left-0 ${
@@ -147,7 +231,7 @@ export default function TaskBlock({
             }`}
           >
             <i
-              className={`fa-solid fa-clock cursor-pointer ${
+              className={`invisible fa-solid fa-clock cursor-pointer ${
                 retro ? 'text-gray' : 'text-gray-light'
               } w-5 h-5 mr-auto ml-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
               onClick={e => {
@@ -155,63 +239,35 @@ export default function TaskBlock({
                 task._editingTimeEstimate = !task._editingTimeEstimate;
               }}
             ></i>
-            <span className='text-gray text-xs absolute text-center top-1 left-1/2 transform -translate-x-1/2'>
-              {!task._editingTimeEstimate ? (
-                task.timeEstimate ? (
-                  estimateDisplay(task.timeEstimate)
-                ) : (
-                  ''
-                )
-              ) : (
-                <input
-                  type='string'
-                  autofocus={true}
-                  onFocus={() => {
-                    this.setSelectionRange(
-                      this.value.length,
-                      this.value.length
-                    );
-                  }}
-                  className='w-auto cursor-default text-xs text-center border-1 !important text-sm p-0 m-0 focus:ring-transparent !bg-inherit'
-                  value={estimateDisplay(task.timeEstimate)}
-                  onChange={e => {
-                    e.stopPropagation();
-                    task.timeEstimate = 1;
-                  }}
-                  onKeyDown={e => {
-                    e.stopPropagation();
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      setTasks(
-                        tasks.map(t => {
-                          if (t.id != task.id) {
-                            return t;
-                          }
-                          return {
-                            ...t,
-                            timeEstimate: e.target.value
-                          };
-                        })
-                      );
-                    }
-                  }}
-                  onClick={e => {
-                    e.stopPropagation();
-                  }}
-                />
-              )}
-            </span>
-            <span className={`items-center text-gray w-5 h-5`}>
+            <span
+              className={`flex items-center justify-center text-gray flex-row`}
+            >
+              <i
+                className={`fa-solid fa-arrow-left cursor-pointer ${
+                  retro ? 'text-gray' : 'text-gray-light'
+                } w-5 h-5 ml-auto mr-5 absolute transform transition duration-300 hover:scale-125 hover:font-bold`}
+                onClick={e => {
+                  e.stopPropagation();
+                  swapLeft(tasks.indexMap[task.id]);
+
+                  // client.tasks.postpone.mutate({
+                  //   taskId: task.id,
+                  //   projectName: activeProject.name
+                  // });
+                }}
+              ></i>
               <i
                 className={`fa-solid fa-arrow-right cursor-pointer ${
                   retro ? 'text-gray' : 'text-gray-light'
-                } w-5 h-5 absolute transform transition duration-300 hover:scale-125 hover:font-bold`}
+                } w-5 h-5 mr-auto ml-5 absolute transform transition duration-300 hover:scale-125 hover:font-bold`}
                 onClick={e => {
                   e.stopPropagation();
-                  client.tasks.postpone.mutate({
-                    taskId: task.id,
-                    projectName: activeProject.name
-                  });
+                  swapRight(tasks.indexMap[task.id]);
+
+                  // client.tasks.postpone.mutate({
+                  //   taskId: task.id,
+                  //   projectName: activeProject.name
+                  // });
                 }}
               ></i>
             </span>
@@ -285,9 +341,21 @@ export default function TaskBlock({
                 api
                   .closeTask(task.id)
                   .then(closed => {
+                    if (
+                      task.parentTaskId &&
+                      task.parentTaskId == activeTask.id
+                    ) {
+                      activeTask.subtasks = activeTask.subtasks.filter(
+                        t => t.id != task.id
+                      );
+                      setActiveTask(activeTask);
+                    }
                     setTasks(
                       new LinkedList(
-                        tasks.toArray().filter(t => t.id != task.id)
+                        tasks
+                          .toArray()
+                          .map(t => (t.id == activeTask?.id ? activeTask : t))
+                          .filter(t => t.id != task.id)
                       )
                     );
                     deleteTaskMutation.mutate(task.id);
@@ -300,14 +368,14 @@ export default function TaskBlock({
                 className={`fa-solid fa-circle-half-stroke cursor-pointer ${
                   retro ? 'text-gray' : 'text-gray-light'
                 } w-5 h-5 absolute transform transition duration-300 hover:scale-125 hover:font-bold`}
-                onClick={e => toggleInProgress(task, e)}
+                onClick={e => toggleInProgress(task, e, setTask)}
               ></i>
             </span>
             <i
               className={`fa-solid ${
-                task.labels.includes('completed') ? 'fa-undo' : 'fa-check'
+                task.labels?.includes('completed') ? 'fa-undo' : 'fa-check'
               } cursor-pointer text-gray w-5 h-5 ml-auto mr-3 transform transition duration-300 hover:scale-125 hover:font-bold`}
-              onClick={e => toggleCompletion(task, e)}
+              onClick={e => toggleCompletion(task, e, setTask)}
             ></i>
           </div>
         </div>

@@ -34,12 +34,17 @@ function Tasks({
   const textareaRef = useRef(null);
   const [socketId, setSocketId] = useState(null);
   const [activeTask, setActiveTask] = useState();
+  if (window) {
+    window.activeTask = activeTask;
+  }
   const [activeTaskIndex, setActiveTaskIndex] = useState();
   const [addingTask, setAddingTask] = useState(false);
+  const [addingSubtask, setAddingSubtask] = useState(false);
   const [taskHash, setTaskHash] = useState({});
   const [editingTask, setEditingTask] = useState();
   const [submitTaskLock, setSubmitTaskLock] = useState(false);
   const [headTask, setHeadTask] = useState(null);
+  const [taskTimer, setTaskTimer] = useState(0);
   const setActiveTaskMutation = trpc.users.setActiveTask.useMutation();
   const setActiveProjectMutation = trpc.users.setActiveProject.useMutation();
   const deleteTaskMutation = trpc.tasks.delete.useMutation();
@@ -59,10 +64,64 @@ function Tasks({
     'shadow-inner',
     'shadow-none'
   ];
+
+  useEffect(() => {
+    setTaskTimer(0);
+  }, [activeTask?.id]);
+
+  useEffect(() => {
+    let counterInterval = setInterval(() => {
+      if (!activeTask) return;
+      if (activeTask.isPaused) return;
+      activeTask.timeSpent += 1;
+      setActiveTask({
+        ...activeTask
+      });
+    }, 1000);
+
+    let saveInterval = setInterval(() => {
+      if (!activeTask) return;
+      console.log('saving');
+      updateTaskMutation.mutate({
+        id: activeTask.id,
+        timeSpent: activeTask.timeSpent
+      });
+    }, 10000);
+
+    return () => (clearInterval(counterInterval), clearInterval(saveInterval));
+  }, [activeTask?.id, activeTask?.subtasks, activeTask?.isPaused]);
+
   const estimateDisplay = seconds => {
     let duration = moment.duration(seconds, 'seconds');
     return moment.utc(duration.asMilliseconds()).format('HH:mm:ss');
   };
+
+  const swapLeft = (node = null) => {
+    const node1 = node || tasks.indexMap[userInfo.activeTaskId];
+    const node2 = node1.prev;
+    if (!node2) return;
+
+    const saveableValues = tasks.swap(node1, node2);
+    console.log('saveableValues', saveableValues);
+    updateSwappedMutation.mutate(saveableValues);
+
+    setTasks(new LinkedList(tasks.toArray()));
+  };
+
+  const swapRight = (node = null) => {
+    const node1 = node || tasks.indexMap[userInfo.activeTaskId];
+    const node2 = node1.next;
+    if (!node2) return;
+
+    const saveableValues = tasks.swap(node2, node1);
+    updateSwappedMutation.mutate(saveableValues);
+
+    setTasks(new LinkedList(tasks.toArray()));
+  };
+
+  useEffect(() => {
+    console.log('active task:', activeTask?.id, activeTask?.isPaused);
+  }, [activeTask]);
 
   useEffect(() => {}, [userInfo.hideProjectHeader]);
 
@@ -82,34 +141,20 @@ function Tasks({
           break;
         case 'ArrowLeft':
           if (c.e.shiftKey) {
-            const node1 = tasks.indexMap[userInfo.activeTaskId];
-            const node2 = node1.prev;
-            if (!node2) return;
-
-            const saveableValues = tasks.swap(node1, node2);
-            console.log('saveableValues', saveableValues);
-            updateSwappedMutation.mutate(saveableValues);
-
-            setTasks(new LinkedList(tasks.toArray()));
+            swapLeft();
           }
           break;
         case 'ArrowRight':
           if (c.e.shiftKey) {
-            const node1 = tasks.indexMap[userInfo.activeTaskId];
-            const node2 = node1.next;
-            if (!node2) return;
-
-            const saveableValues = tasks.swap(node2, node1);
-            updateSwappedMutation.mutate(saveableValues);
-
-            setTasks(new LinkedList(tasks.toArray()));
+            swapRight();
           }
           break;
         case 'N':
           setAddingTask(true);
           break;
         case 'Enter':
-          toggleCompletion(tasks.find(({ id }) => id == userInfo.activeTaskId));
+          // toggleCompletion(tasks.find(({ id }) => id == userInfo.activeTaskId));
+          break;
         // case 'Escape':
         //   setAddingTask(false);
       }
@@ -175,6 +220,7 @@ function Tasks({
         priority: 1
       })
       .then(async tasks => {
+        window.tasks = tasks.map(t => t.content);
         const sorted = await client.tasks.queryRawSorted.query({
           projectId: activeProject.id
         });
@@ -183,6 +229,30 @@ function Tasks({
           obj[task.id] = task;
           return obj;
         }, {});
+        window.indexed = indexed;
+        sorted.forEach(task => {
+          indexed[task.id] = {
+            ...indexed[task.id],
+            ...task
+          };
+        });
+
+        if (userInfo.activeTaskId && indexed[userInfo.activeTaskId]) {
+          const subtasks = await client.tasks.queryRawSorted.query({
+            projectId: activeProject.id,
+            parentTaskId: userInfo.activeTaskId
+          });
+          indexed[userInfo.activeTaskId].subtasks = subtasks.map(
+            (task, index) => {
+              return {
+                labels: [],
+                ...indexed[task.id],
+                ...task
+              };
+            }
+          );
+          setActiveTask(indexed[userInfo.activeTaskId]);
+        }
 
         let merged = sorted.map(
           task => (
@@ -207,18 +277,30 @@ function Tasks({
 
   const activateTask = async (task, index) => {
     const activeTaskId = task.id == userInfo.activeTaskId ? null : task.id;
+    if (activeTask) {
+      const subtasks = await client.tasks.queryRawSorted.query({
+        projectId: activeProject.id,
+        parentTaskId: activeTaskId
+      });
+      task.subtasks = subtasks.map(task => ({
+        labels: [],
+        ...taskHash[task.id],
+        ...task
+      }));
+    }
     setUserInfo({
       ...userInfo,
       activeTaskId: activeTaskId,
       activeTaskSetAt: new Date()
     });
     setActiveTaskIndex(index);
-    setActiveTask(task);
+    setActiveTask(activeTaskId ? task : null);
     const updatedUser = await setActiveTaskMutation.mutateAsync(activeTaskId);
   };
 
-  const toggleCompletion = (task, e) => (
+  const toggleCompletion = (task, e, setTask = null) => (
     e && e.stopPropagation(),
+    task && task.id == activeTask?.id && activateTask(task),
     task &&
       api
         .updateTask(task.id, {
@@ -229,12 +311,30 @@ function Tasks({
               )
         })
         .then(updatedTask => {
-          setTasks(tasks.map(t => (t.id != task.id ? t : updatedTask)));
+          if (activeTask && task.parentId == activeTask.id) {
+            alert('its a subtask');
+          }
+          setTasks(
+            tasks.map(t =>
+              t.id != task.id
+                ? t
+                : {
+                    ...task,
+                    ...updatedTask
+                  }
+            )
+          );
+          if (setTask) {
+            setTask({
+              ...task,
+              ...updatedTask
+            });
+          }
         })
         .catch(err => console.log(err))
   );
 
-  const toggleInProgress = (task, e) => (
+  const toggleInProgress = (task, e, setTask = null) => (
     e && e.stopPropagation(),
     task &&
       api
@@ -247,6 +347,9 @@ function Tasks({
         })
         .then(updatedTask => {
           setTasks(tasks.map(t => (t.id != task.id ? t : updatedTask)));
+          if (setTask) {
+            setTask(updatedTask);
+          }
         })
         .catch(err => console.log(err))
   );
@@ -273,51 +376,173 @@ function Tasks({
             );
           })}
         {settings.taskLayout == 'grid' ? (
-          <div
-            className={`grid ${
-              userInfo.hideSidebar
-                ? 'lg:grid-cols-6 sm:grid-cols-4 xs:grid-cols-3 text-sm transform transition-all duration-300 ease-in-out'
-                : someTaskActive
-                ? 'grid-cols-4'
-                : 'grid-cols-4'
-            } gap-4 pt-4`}
-          >
-            {tasks.mapArray((task, index) => {
-              let showIcons = editingTask?.id != task.id;
-              let isActive = task.id == userInfo.activeTaskId;
-              return (
+          <>
+            {activeTask && (
+              <div className='grid grid-cols-2 gap-2 pt-2'>
                 <TaskBlock
-                  key={task.id + index}
-                  index={index}
-                  task={task}
+                  key={'active-task'}
+                  index={activeTask.id}
+                  passedTask={activeTask}
+                  tasks={tasks}
+                  setTasks={setTasks}
                   userInfo={userInfo}
                   setUserInfo={setUserInfo}
-                  setActiveTask={activateTask}
+                  setActiveTask={setActiveTask}
                   setActiveTaskIndex={setActiveTaskIndex}
+                  editingTask={editingTask}
                   setEditingTask={setEditingTask}
-                  showIcons={showIcons}
-                  isActive={isActive}
-                  someTaskActive={someTaskActive}
+                  showIcons={true}
+                  isActive={true}
+                  someTaskActive={true}
                   pointMap={pointMap}
                   onlyShowOnHover={onlyShowOnHover}
                   toggleCompletion={toggleCompletion}
                   toggleInProgress={toggleInProgress}
                   activateTask={activateTask}
                   updateTaskMutation={updateTaskMutation}
+                  deleteTaskMutation={deleteTaskMutation}
+                  api={api}
+                  textareaRef={textareaRef}
+                  submitTaskLock={submitTaskLock}
+                  client={client}
+                  estimateDisplay={estimateDisplay}
+                  c={c}
+                  router={router}
+                  activeTask={activeTask}
+                  swapRight={swapRight}
+                  swapLeft={swapLeft}
                 />
-              );
-            })}
-            {!someTaskActive && (
-              <NewTask
-                addingTask={addingTask}
-                setAddingTask={setAddingTask}
-                userInfo={userInfo}
-                activeProject={activeProject}
-                tasks={tasks}
-                setTasks={setTasks}
-              ></NewTask>
+                <div className='grid grid-cols-3 gap-2 auto-rows-min'>
+                  {activeTask.subtasks?.map((task, index) => {
+                    let showIcons = editingTask?.id != task.id;
+                    let isActive = task.id == userInfo.activeTaskId;
+                    return (
+                      <TaskBlock
+                        key={task.id + index}
+                        index={index}
+                        passedTask={task}
+                        tasks={tasks}
+                        setTasks={setTasks}
+                        userInfo={userInfo}
+                        setUserInfo={setUserInfo}
+                        setActiveTask={setActiveTask}
+                        setActiveTaskIndex={setActiveTaskIndex}
+                        editingTask={editingTask}
+                        setEditingTask={setEditingTask}
+                        showIcons={showIcons}
+                        isActive={isActive}
+                        someTaskActive={someTaskActive}
+                        pointMap={pointMap}
+                        onlyShowOnHover={onlyShowOnHover}
+                        toggleCompletion={toggleCompletion}
+                        toggleInProgress={toggleInProgress}
+                        activateTask={activateTask}
+                        updateTaskMutation={updateTaskMutation}
+                        deleteTaskMutation={deleteTaskMutation}
+                        api={api}
+                        textareaRef={textareaRef}
+                        submitTaskLock={submitTaskLock}
+                        client={client}
+                        estimateDisplay={estimateDisplay}
+                        c={c}
+                        router={router}
+                        activeTask={activeTask}
+                        swapRight={swapRight}
+                        swapLeft={swapLeft}
+                      />
+                    );
+                  })}
+                  <NewTask
+                    addingTask={addingTask}
+                    addingSubtask={addingSubtask}
+                    setAddingTask={setAddingTask}
+                    setAddingSubtask={setAddingSubtask}
+                    userInfo={userInfo}
+                    activeProject={activeProject}
+                    tasks={tasks}
+                    setTasks={setTasks}
+                    parentTaskId={activeTask.id}
+                    activeTask={activeTask}
+                    setActiveTask={setActiveTask}
+                  ></NewTask>{' '}
+                </div>
+              </div>
             )}
-          </div>
+            <div
+              className={`grid ${
+                userInfo.hideSidebar
+                  ? 'lg:grid-cols-6 sm:grid-cols-4 xs:grid-cols-3 text-sm transform transition-all duration-300 ease-in-out'
+                  : someTaskActive
+                  ? 'grid-cols-4'
+                  : 'grid-cols-4'
+              } gap-4 pt-4`}
+            >
+              {tasks
+                .toArray()
+                .filter(task => {
+                  return (
+                    (activeProject?.showCompletedTasks &&
+                      task.labels.includes('completed')) ||
+                    (activeProject?.showIncompleteTasks &&
+                      !task.labels.includes('completed'))
+                  );
+                })
+                .map((task, index) => {
+                  let showIcons = editingTask?.id != task.id;
+                  let isActive = task.id == userInfo.activeTaskId;
+                  if (isActive && !activeTask) setActiveTask(task);
+                  return (
+                    <TaskBlock
+                      key={task.id + index}
+                      index={index}
+                      passedTask={task}
+                      tasks={tasks}
+                      setTasks={setTasks}
+                      userInfo={userInfo}
+                      setUserInfo={setUserInfo}
+                      setActiveTask={setActiveTask}
+                      setActiveTaskIndex={setActiveTaskIndex}
+                      editingTask={editingTask}
+                      setEditingTask={setEditingTask}
+                      showIcons={showIcons}
+                      isActive={isActive}
+                      someTaskActive={someTaskActive}
+                      pointMap={pointMap}
+                      onlyShowOnHover={onlyShowOnHover}
+                      toggleCompletion={toggleCompletion}
+                      toggleInProgress={toggleInProgress}
+                      activateTask={activateTask}
+                      updateTaskMutation={updateTaskMutation}
+                      deleteTaskMutation={deleteTaskMutation}
+                      api={api}
+                      textareaRef={textareaRef}
+                      submitTaskLock={submitTaskLock}
+                      client={client}
+                      estimateDisplay={estimateDisplay}
+                      c={c}
+                      router={router}
+                      activeTask={activeTask}
+                      swapRight={swapRight}
+                      swapLeft={swapLeft}
+                    />
+                  );
+                })}
+              {true && (
+                <NewTask
+                  addingTask={addingTask}
+                  addingSubtask={addingSubtask}
+                  setAddingTask={setAddingTask}
+                  setAddingSubtask={setAddingSubtask}
+                  userInfo={userInfo}
+                  activeProject={activeProject}
+                  tasks={tasks}
+                  setTasks={setTasks}
+                  activeTask={activeTask}
+                  setActiveTask={setActiveTask}
+                ></NewTask>
+              )}
+            </div>
+          </>
         ) : (
           tasks.mapArray((task, index) => (
             <TaskItem
@@ -326,7 +551,7 @@ function Tasks({
               task={task}
               userInfo={userInfo}
               setUserInfo={setUserInfo}
-              setActiveTask={activateTask}
+              setActiveTask={setActiveTask}
               setActiveTaskIndex={setActiveTaskIndex}
             />
           ))

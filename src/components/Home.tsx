@@ -169,9 +169,8 @@ const Home: NextPage<PageProps> = props => {
             ...project,
             ...localProject
           };
-          const { ...safe } = merged;
           console.log('merged', merged);
-          setActiveProject(safe);
+          setActiveProject(merged);
         });
       });
       api
@@ -282,6 +281,7 @@ const Home: NextPage<PageProps> = props => {
         router.push('/prompts');
         break;
       case 'r':
+        if (props.c.e.metaKey) return;
         router.push('/savedResponses');
         break;
       case 's':
@@ -429,19 +429,16 @@ const Home: NextPage<PageProps> = props => {
     const match = codeSnippetRegex.exec(newMessage.content);
 
     if (match) {
-      const codeBlock = match[1].trim();
-      const [language, code] = codeBlock.split('\n', 2);
-
+      // const codeBlock = match[1].trim();
+      // const [language, code] = codeBlock.split('\n', 2);
       // Initialize the Shiki highlighter
-      const highlighter = await getHighlighter({ theme: 'nord' });
-      const highlightedCode = highlighter.codeToHtml(code, language);
-
-      const updatedMessageContent = newMessage.content.replace(
-        codeSnippetRegex,
-        `<pre class="shiki nord" style="background-color: #2e3440"><code>${highlightedCode}</code></pre>`
-      );
-
-      updateMessageValue(updatedMessageContent);
+      // const highlighter = await getHighlighter({ theme: 'nord' });
+      // const highlightedCode = highlighter.codeToHtml(code, language);
+      // const updatedMessageContent = newMessage.content.replace(
+      //   codeSnippetRegex,
+      //   `<pre class="shiki nord" style="background-color: #2e3440"><code>${highlightedCode}</code></pre>`
+      // );
+      // updateMessageValue(updatedMessageContent);
     }
 
     if (newMessage.content.startsWith('@') && conversation.id) {
@@ -521,7 +518,7 @@ const Home: NextPage<PageProps> = props => {
   const [activeComponent, setActiveComponent] = useState<any>();
   console.log('home');
   return (
-    <>
+    <div className='h-full'>
       <div className='flex h-full' id='main-container'>
         {/* <Block>dkfsdkjfhskjdh</Block> */}
         {/* <Table /> */}
@@ -545,6 +542,7 @@ const Home: NextPage<PageProps> = props => {
             c={props.c}
             isMobile={isMobile}
             style={{
+              '--tw-w-sidebar': '225px',
               transition: 'z-20 opacity 0.3s ease-out, transform 0.3s ease-out',
               opacity: userInfo.hideSidebar ? 0.5 : 1,
               transform: userInfo.hideSidebar
@@ -700,7 +698,7 @@ const Home: NextPage<PageProps> = props => {
           </main>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

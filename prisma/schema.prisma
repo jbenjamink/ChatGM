@@ -116,6 +116,8 @@ model Project {
   owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  showCompletedTasks Boolean @default(false)
+  showIncompleteTasks Boolean @default(true)
 }
 
 model Task {
@@ -134,6 +136,9 @@ model Task {
   timeSpent   Int     @default(0)
   pointValue  Int     @default(1)
   labels      Label[] 
+  parentTaskId String?
+  parentTask  Task?    @relation("parentTask", fields: [parentTaskId], references: [id])
+  subTasks    Task[]   @relation("parentTask")
 }
 
 model Label {

@@ -1,8 +1,8 @@
 import { combineReducers } from 'redux';
-import yourReducer from './yourReducer';
+// import yourReducer from './yourReducer';
 
 const rootReducer = combineReducers({
-  yourReducerName: yourReducer,
+  // yourReducerName: yourReducer,
   // Add more reducers as needed
 });
 

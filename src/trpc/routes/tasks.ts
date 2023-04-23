@@ -17,8 +17,15 @@ export const create = procedure
     const session = ctx.session;
     const user = session.user;
     console.log('input:', input);
-    const { projectId, content, id, project, projectOwnerId, prevTaskId } =
-      input;
+    const {
+      projectId,
+      content,
+      id,
+      project,
+      projectOwnerId,
+      prevTaskId,
+      parentTaskId
+    } = input;
     console.log(projectId, content, id, project);
     const existingRecord = await prisma.task.findFirst({
       where: { name: content, projectId: projectId }
@@ -36,7 +43,8 @@ export const create = procedure
         id: id,
         name: content,
         projectId: projectId,
-        prevTaskId: prevTaskId
+        prevTaskId: prevTaskId,
+        parentTaskId: parentTaskId
       }
     });
     return task;
@@ -178,27 +186,36 @@ export const queryRawSorted = procedure
   })
   .query(async ({ ctx, input }) => {
     const user = ctx.session.user;
-    const { projectId } = input;
+    const { projectId, parentTaskId = null } = input;
+
     const tasks = await prisma.$queryRaw`WITH RECURSIVE evt(id) AS (
       SELECT
           id,
           name,
           "projectId",
           "prevTaskId",
-          "pointValue"
+          "pointValue",
+          "parentTaskId",
+          "timeEstimate",
+          "timeSpent"
       FROM "Task"
-      WHERE "prevTaskId" IS NULL AND "projectId" = ${projectId}
+      WHERE "prevTaskId" IS NULL AND ("parentTaskId" IS NULL AND ${
+        parentTaskId == null
+      } OR "parentTaskId" = ${parentTaskId}) AND "projectId" = ${projectId}
       UNION
       SELECT
           t.id,
           t.name,
           t."projectId",
           t."prevTaskId",
-          t."pointValue"
+          t."pointValue",
+          t."parentTaskId",
+          t."timeEstimate",
+          t."timeSpent"
       FROM "Task" t
       JOIN evt ON (t."prevTaskId" = evt.id)
       )
-      SELECT * FROM evt`;
+      SELECT evt.* FROM evt`;
 
     // SELECT t.*, ARRAY_AGG(l."name") AS _labels
     // FROM evt t

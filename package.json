@@ -12,9 +12,13 @@
     "lint": "next lint",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "prisma:generate": "prisma generate",
-    "electron-start": "electron ."
+    "electron-start": "electron .",
+    "electron": "electron chatgm-electron/main.js"
   },
   "dependencies": {
+    "@capacitor/cli": "^4.7.3",
+    "@capacitor/core": "^4.7.3",
+    "@capacitor/ios": "^4.7.3",
     "@cloudinary/react": "^1.11.2",
     "@cloudinary/url-gen": "^1.9.2",
     "@doist/todoist-api-typescript": "^2.1.2",

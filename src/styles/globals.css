@@ -93,7 +93,7 @@ html {
   color: #dedfe2 !important;
 }
 .text-gray-slate {
-  color: #7E8590 !important;
+  color: #7e8590 !important;
 }
 .text-yellow,
 .message .text-yellow {
@@ -106,10 +106,10 @@ html {
   background: #7e8490;
 }
 .hover-dark-gray:hover {
-  background: #171B22;
+  background: #171b22;
 }
 .hover-gray:hover {
-  background: #21272D;
+  background: #21272d;
 }
 .fa-stars.fa-solid {
   color: #fee77e !important;
@@ -391,7 +391,7 @@ form button.editing-message-cancel:hover {
   animation: spin 1s linear infinite;
 }
 .box-shadow {
-  box-shadow: 0 10px 10px rgba(0,0,0,.1), 0 6px 3px rgba(0,0,0,.12);
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1), 0 6px 3px rgba(0, 0, 0, 0.12);
 }
 @keyframes spin {
   to {
@@ -710,7 +710,9 @@ h1 {
   resize: none;
   max-height: 190px;
   overflow-y: auto;
-  width: calc(100% - 80px); /* Set width to 100% minus the width of the button */
+  width: calc(
+    100% - 80px
+  ); /* Set width to 100% minus the width of the button */
   margin-right: 10px; /* Add some margin between textarea and button */
 }
 
@@ -820,7 +822,7 @@ code {
   scrollbar-width: none; /* Hide scrollbar for Firefox */
 }
 .flash {
-  background: #111E2E;
+  background: #111e2e;
   border-top: 1px solid #224981;
   border-bottom: 1px solid #224981;
 }
@@ -854,7 +856,7 @@ code {
   }
   .hidden-sm {
     display: none;
-  };
+  }
   .auto-expand-textarea {
     min-height: 40px; /* Set a specific height for the textarea on mobile */
     max-height: 40px; /* Set the same value for max-height */
@@ -889,7 +891,7 @@ table th {
 }
 
 .bg-dark-blue {
-  background: #111E2E;
+  background: #111e2e;
 }
 .hover-dark-blue:hover {
   background: #151e27 !important;
@@ -906,8 +908,8 @@ table th {
   height: 100% !important;
 }
 .flash-error {
-  background: #26181C;
-  border: 1px solid #7B2F30;
+  background: #26181c;
+  border: 1px solid #7b2f30;
 }
 
 @media (min-width: 710px) {
