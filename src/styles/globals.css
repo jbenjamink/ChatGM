@@ -912,6 +912,22 @@ table th {
   border: 1px solid #7b2f30;
 }
 
+.brightness-250 {
+  filter: brightness(250%);
+}
+
+.brightness-300 {
+  filter: brightness(300%);
+}
+
+.brightness-350 {
+  filter: brightness(350%);
+}
+
+.brightness-400 {
+  filter: brightness(400%);
+}
+
 @media (min-width: 710px) {
   #add-task {
     min-height: 250px;

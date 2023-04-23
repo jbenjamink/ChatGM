@@ -62,7 +62,7 @@ export default function ButtonGroup({
           });
         }}
       >
-        1:00
+        1h
       </button>
       <button
         type='button'
@@ -76,7 +76,7 @@ export default function ButtonGroup({
           });
         }}
       >
-        <i className='fa fa-plus'></i>
+        <i className='fa fa-plus text-[8px]'>5</i>
       </button>
       <button
         type='button'

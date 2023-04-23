@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import AutoExpandTextarea from './AutoExpandTextarea';
 import { subscribeToChannel } from '../lib/ably';
 import pusher from '../lib/pusher';
@@ -9,6 +9,7 @@ import TaskItem from './TaskItem';
 import TaskBlock from './TaskBlock';
 import NewTask from './NewTask';
 import ProjectListItem from './ProjectListItem';
+import ProjectProgressBar from './ProjectProgressBar';
 import { TodoistApi } from '@doist/todoist-api-typescript';
 import { Card, Row } from 'flowbite-react';
 import { useRouter } from 'next/router';
@@ -32,6 +33,7 @@ function Tasks({
   const scrollContainer = useRef(null);
   const channelRef = useRef(null);
   const textareaRef = useRef(null);
+  const noteareaRef = useRef(null);
   const [socketId, setSocketId] = useState(null);
   const [activeTask, setActiveTask] = useState();
   if (window) {
@@ -53,6 +55,9 @@ function Tasks({
   const updateProjectMutation = trpc.projects.update.useMutation();
   const router = useRouter();
 
+  const [, updateState] = useState();
+  const forceUpdate = useCallback(() => updateState({}), []);
+
   const pointMap = [
     '',
     'shadow-xs',
@@ -69,8 +74,11 @@ function Tasks({
     setTaskTimer(0);
   }, [activeTask?.id]);
 
+  const getActiveTask = () => activeTask;
   useEffect(() => {
+    console.log('ACTIVE:', activeTask);
     let counterInterval = setInterval(() => {
+      let activeTask = getActiveTask();
       if (!activeTask) return;
       if (activeTask.isPaused) return;
       activeTask.timeSpent += 1;
@@ -89,11 +97,19 @@ function Tasks({
     }, 10000);
 
     return () => (clearInterval(counterInterval), clearInterval(saveInterval));
-  }, [activeTask?.id, activeTask?.subtasks, activeTask?.isPaused]);
+  }, [
+    activeTask?.id,
+    activeTask?.subtasks,
+    activeTask?.isPaused,
+    activeTask?.notes
+  ]);
 
   const estimateDisplay = seconds => {
     let duration = moment.duration(seconds, 'seconds');
-    return moment.utc(duration.asMilliseconds()).format('HH:mm:ss');
+    return moment
+      .utc(duration.asMilliseconds())
+      .format(duration.asHours() >= 1 ? 'H:mm:ss' : 'm:ss')
+      .trim();
   };
 
   const swapLeft = (node = null) => {
@@ -204,6 +220,10 @@ function Tasks({
   }
 
   useEffect(() => {
+    forceUpdate();
+  }, [tasks.tail]);
+
+  useEffect(() => {
     if (!activeProject) {
       return;
     }
@@ -274,6 +294,18 @@ function Tasks({
       })
       .catch(err => console.log(err));
   }, [activeProject?.id]);
+
+  useEffect(() => {
+    const saveInterval = setTimeout(() => {
+      if (activeTask?.notes) {
+        updateTaskMutation.mutate({
+          id: activeTask.id,
+          notes: activeTask.notes
+        });
+      }
+    }, 1000);
+    return () => clearInterval(saveInterval);
+  }, [activeTask?.notes]);
 
   const activateTask = async (task, index) => {
     const activeTaskId = task.id == userInfo.activeTaskId ? null : task.id;
@@ -356,8 +388,34 @@ function Tasks({
 
   let onlyShowOnHover = true;
   let someTaskActive = !!userInfo.activeTaskId;
+
+  const tasksPerRowClass = () => {
+    switch (settings.tasksPerRow) {
+      case 1:
+        return 'lg:grid-cols-1';
+      case 2:
+        return 'lg:grid-cols-2';
+      case 3:
+        return 'lg:grid-cols-3';
+      case 4:
+        return 'lg:grid-cols-4';
+      case 5:
+        return 'lg:grid-cols-5';
+      case 6:
+        return 'lg:grid-cols-6';
+      case 7:
+        return 'lg:grid-cols-7';
+      case 8:
+        return 'lg:grid-cols-8';
+      case 9:
+        return 'lg:grid-cols-9';
+      case 10:
+        return 'lg:grid-cols-10';
+    }
+  };
   return (
     <div className='mx-auto h-full p-4 pt-0'>
+      <ProjectProgressBar tasks={tasks.toArray()} />
       <div className='overflow-y-auto' ref={scrollContainer}>
         {projects
           .filter(project => {
@@ -378,7 +436,7 @@ function Tasks({
         {settings.taskLayout == 'grid' ? (
           <>
             {activeTask && (
-              <div className='grid grid-cols-2 gap-2 pt-2'>
+              <div className='grid grid-cols-3 gap-2 pt-2'>
                 <TaskBlock
                   key={'active-task'}
                   index={activeTask.id}
@@ -466,16 +524,38 @@ function Tasks({
                     setActiveTask={setActiveTask}
                   ></NewTask>{' '}
                 </div>
+                <div>
+                  <textarea
+                    value={activeTask.notes}
+                    className='h-full w-full bg-transparent focus:outline-none focus:ring-0'
+                    autoFocus
+                    placeholder='Notes'
+                    ref={noteareaRef}
+                    onKeyDown={e => {
+                      e.stopPropagation();
+                      if (e.key == 'Escape') {
+                        noteareaRef.current.blur();
+                        return;
+                      }
+                    }}
+                    onChange={e => {
+                      setActiveTask({
+                        ...activeTask,
+                        notes: e.target.value
+                      });
+                    }}
+                  />
+                </div>
               </div>
             )}
             <div
               className={`grid ${
                 userInfo.hideSidebar
-                  ? 'lg:grid-cols-6 sm:grid-cols-4 xs:grid-cols-3 text-sm transform transition-all duration-300 ease-in-out'
+                  ? 'lg:grid-cols- sm:grid-cols-4 xs:grid-cols-3 text-sm transform transition-all duration-300 ease-in-out'
                   : someTaskActive
                   ? 'grid-cols-4'
                   : 'grid-cols-4'
-              } gap-4 pt-4`}
+              } gap-4 pt-4 ${tasksPerRowClass()}`}
             >
               {tasks
                 .toArray()

@@ -13,6 +13,7 @@ import MyAccount from '../components/MyAccount';
 import Topbar from '../components/Topbar';
 import Debugger from '../components/Debugger';
 import Modal from '../components/Modal';
+import FastQuery from '../components/FastQuery';
 import ActiveTask from '../components/ActiveTask';
 import NewTask from '../components/NewTask';
 import Table from '@components/Table';
@@ -116,6 +117,8 @@ const Home: NextPage<PageProps> = props => {
   const [addingTask, setAddingTask] = useState(false);
 
   const [projects, setProjects] = useState<any>([]);
+
+  const [fastQuery, setFastQuery] = useState(false);
 
   const api = new TodoistApi(userInfo.todoistApiKey);
 
@@ -292,6 +295,9 @@ const Home: NextPage<PageProps> = props => {
         break;
       case 'N':
         path != '/tasks' && setAddingTask(true);
+        break;
+      case 'q':
+        setFastQuery(true);
         break;
     }
   }, [props.c]);
@@ -595,6 +601,14 @@ const Home: NextPage<PageProps> = props => {
               modalOpen={modalOpen}
               setModalOpen={setModalOpen}
               children={<></>}
+            />
+          )}
+          {fastQuery && (
+            <FastQuery
+              fastQuery={fastQuery}
+              setFastQuery={setFastQuery}
+              children={<></>}
+              client={client}
             />
           )}
           <main

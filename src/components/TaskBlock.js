@@ -91,7 +91,9 @@ export default function TaskBlock({
                 : '!bg-green-950'
               : 'bg-green'
             : ''
-        } ${task.labels?.includes('in-progress') ? '!bg-orange-800' : ''}`}
+        } ${
+          task.labels?.includes('in-progress') ? '!bg-orange-800' : ''
+        } brightness-100`}
         onClick={() => activateTask(task, index)}
       >
         <div
@@ -121,7 +123,7 @@ export default function TaskBlock({
                       // console.log(task.id, index);
                       return (
                         <span key={index}>
-                          <i className='fa-solid fa-circle font-8 text-offwhite'></i>
+                          <i className='fa-light fa-star font-8 text-offwhite'></i>
                         </span>
                       );
                     })}
@@ -197,7 +199,7 @@ export default function TaskBlock({
             }`}
           >
             <ButtonGroup
-              classes={`z-20`}
+              classes={`z-20 hidden group-hover:block`}
               task={task}
               setTask={setTask}
               client={client}
@@ -209,8 +211,8 @@ export default function TaskBlock({
                 isActive && task.id != editingTask?.id
                   ? 'visible'
                   : task.id == editingTask?.id
-                  ? 'invisible'
-                  : 'invisible group-hover:visible'
+                  ? 'visible'
+                  : 'visible group-hover:visible'
               }`}
             >
               {task.timeEstimate

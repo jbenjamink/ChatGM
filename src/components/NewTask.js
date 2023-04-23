@@ -38,7 +38,9 @@ export default function NewTask({
         }}
       >
         <div className='flex h-full flex-col justify-center gap-4'>
-          {!addingTask || (addingSubtask && parentTaskId == null) ? (
+          {!addingTask ||
+          (addingSubtask && parentTaskId == null) ||
+          (addingTask && !addingSubtask && parentTaskId != null) ? (
             <i className='fas fa-plus text-3xl mx-auto'></i>
           ) : (
             <>
@@ -83,12 +85,14 @@ export default function NewTask({
                             (parentTaskId == null && tasks.tail?.value.id) ||
                             null,
                           labels: [],
-                          parentTaskId: parentTaskId
+                          parentTaskId: parentTaskId,
+                          timeEstimate: 900,
+                          timeSpent: 0
                         };
+                        const prevTasks = tasks.toArray();
                         if (parentTaskId == null) {
-                          setTasks(
-                            new LinkedList([...tasks.toArray(), newTask])
-                          );
+                          setTasks(new LinkedList([...prevTasks, newTask]));
+                          console.log('TAIL:', tasks.tail);
                         } else {
                           setActiveTask({
                             ...activeTask,
@@ -100,6 +104,15 @@ export default function NewTask({
                         // create an extension in our database
                         const fetchedTask =
                           await createTaskMutation.mutateAsync(newTask);
+                        // alert('should be updating tasks');
+                        let updatedTask = {
+                          ...newTask,
+                          ...fetchedTask
+                        };
+                        // alert(JSON.stringify(updatedTask));
+                        setTasks(new LinkedList([...prevTasks, updatedTask]));
+                        console.log('TAIL:', tasks.tail);
+                        // console.log('FETCHED:', fetchedTask);
                       })
                       .catch(err => {
                         console.log(err);

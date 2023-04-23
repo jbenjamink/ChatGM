@@ -197,7 +197,8 @@ export const queryRawSorted = procedure
           "pointValue",
           "parentTaskId",
           "timeEstimate",
-          "timeSpent"
+          "timeSpent",
+          "notes"
       FROM "Task"
       WHERE "prevTaskId" IS NULL AND ("parentTaskId" IS NULL AND ${
         parentTaskId == null
@@ -211,7 +212,8 @@ export const queryRawSorted = procedure
           t."pointValue",
           t."parentTaskId",
           t."timeEstimate",
-          t."timeSpent"
+          t."timeSpent",
+          t."notes"
       FROM "Task" t
       JOIN evt ON (t."prevTaskId" = evt.id)
       )
