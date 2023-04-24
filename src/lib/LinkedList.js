@@ -128,10 +128,22 @@ export class LinkedList {
         saveableValues.push(node2Next.value);
       }
     } else {
-      //   node1.prev = node2Prev;
-      //   node1.next = node2Next;
-      //   node2.prev = node1Prev;
-      //   node2.next = node1Next;
+      node1.prev = node2Prev;
+      node1.value.prevTaskId = node2Prev?.value.id || null;
+      saveableValues.push(node1.value);
+      node1.next = node2Next;
+      node2.prev = node1Prev;
+      node2.value.prevTaskId = node1Prev.value.id;
+      saveableValues.push(node2.value);
+      node2.next = node1Next;
+      if (node1Prev !== null) {
+        node1Prev.next = node2;
+      }
+      if (node2Next !== null) {
+        node2Next.prev = node1;
+        node2Next.value.prevTaskId = node1.value.id;
+        saveableValues.push(node2Next.value);
+      }
     }
     if (this.head === node1) {
       this.head = node2;

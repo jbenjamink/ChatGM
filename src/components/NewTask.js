@@ -104,15 +104,20 @@ export default function NewTask({
                         // create an extension in our database
                         const fetchedTask =
                           await createTaskMutation.mutateAsync(newTask);
-                        // alert('should be updating tasks');
                         let updatedTask = {
                           ...newTask,
                           ...fetchedTask
                         };
-                        // alert(JSON.stringify(updatedTask));
-                        setTasks(new LinkedList([...prevTasks, updatedTask]));
-                        console.log('TAIL:', tasks.tail);
-                        // console.log('FETCHED:', fetchedTask);
+                        if (parentTaskId == null) {
+                          setTasks(new LinkedList([...prevTasks, updatedTask]));
+                        } else {
+                          setActiveTask({
+                            ...activeTask,
+                            subtasks: activeTask.subtasks
+                              ? [...activeTask.subtasks, updatedTask]
+                              : [updatedTask]
+                          });
+                        }
                       })
                       .catch(err => {
                         console.log(err);

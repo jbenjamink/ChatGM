@@ -112,6 +112,14 @@ function Tasks({
       .trim();
   };
 
+  const swap = (node1, node2) => {
+    const saveableValues = tasks.swap(node1, node2);
+    console.log('saveableValues', saveableValues);
+    updateSwappedMutation.mutate(saveableValues);
+
+    setTasks(new LinkedList(tasks.toArray()));
+  };
+
   const swapLeft = (node = null) => {
     const node1 = node || tasks.indexMap[userInfo.activeTaskId];
     const node2 = node1.prev;
@@ -309,7 +317,7 @@ function Tasks({
 
   const activateTask = async (task, index) => {
     const activeTaskId = task.id == userInfo.activeTaskId ? null : task.id;
-    if (activeTask) {
+    if (activeTaskId) {
       const subtasks = await client.tasks.queryRawSorted.query({
         projectId: activeProject.id,
         parentTaskId: activeTaskId
@@ -469,6 +477,7 @@ function Tasks({
                   activeTask={activeTask}
                   swapRight={swapRight}
                   swapLeft={swapLeft}
+                  swap={swap}
                 />
                 <div className='grid grid-cols-3 gap-2 auto-rows-min'>
                   {activeTask.subtasks?.map((task, index) => {
@@ -507,6 +516,7 @@ function Tasks({
                         activeTask={activeTask}
                         swapRight={swapRight}
                         swapLeft={swapLeft}
+                        swap={swap}
                       />
                     );
                   })}
@@ -604,6 +614,7 @@ function Tasks({
                       activeTask={activeTask}
                       swapRight={swapRight}
                       swapLeft={swapLeft}
+                      swap={swap}
                     />
                   );
                 })}

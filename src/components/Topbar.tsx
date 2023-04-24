@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Conversation } from '../interfaces';
 import { trpc } from '../utils/trpc';
 import NotificationsMenu from './NotificationsMenu';
@@ -16,6 +16,7 @@ interface TopbarProps {
   setActiveProject(...args: any): any;
   projects: any;
   setProjects: any;
+  c: any;
 }
 
 const Topbar: React.FC<TopbarProps> = ({
@@ -28,7 +29,8 @@ const Topbar: React.FC<TopbarProps> = ({
   activeProject,
   setActiveProject,
   projects,
-  setProjects
+  setProjects,
+  c
 }) => {
   const [isMembersExpanded, setIsMembersExpanded] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -44,6 +46,30 @@ const Topbar: React.FC<TopbarProps> = ({
   const router = useRouter();
 
   const api = new TodoistApi(userInfo.todoistApiKey);
+
+  const createOrFetchProject = async (e: any, name: string) => {
+    const projectAttributes = {
+      name: name
+    };
+
+    const existingProject = projects.find(
+      (p: any) => p.name == projectAttributes.name
+    );
+
+    if (!existingProject) {
+      api.addProject(projectAttributes).then(async (todoistProject: any) => {
+        const fetchedProject = await createOrFetchProjectMutation.mutateAsync({
+          id: todoistProject.id,
+          ...projectAttributes
+        });
+        setActiveProject(fetchedProject);
+        setProjects([...projects, fetchedProject]);
+        console.log(fetchedProject);
+      });
+    } else {
+      setActiveProject(existingProject);
+    }
+  };
 
   const createOrFetchDateProject = async (_e: any, dayOffset = 0) => {
     let date =
@@ -79,6 +105,40 @@ const Topbar: React.FC<TopbarProps> = ({
     }
   };
 
+  const createOrFetchWorkProject = async (e: any, name = 'Parallel') => {
+    createOrFetchProject(e, name);
+  };
+
+  const createOrFetchMasterProject = async (e: any, name = 'Master') => {
+    createOrFetchProject(e, name);
+  };
+
+  useEffect(() => {
+    switch (c?.key) {
+      case 'b':
+        createOrFetchProject(null, 'Bugs');
+        break;
+      case 'w':
+        createOrFetchProject(null, 'Parallel');
+        break;
+      case 'f':
+        createOrFetchProject(null, 'Features');
+        break;
+      case 't':
+        createOrFetchDateProject(null, 0);
+      case 'ArrowUp':
+        setUserInfo({
+          ...userInfo,
+          hideProjectHeader: true
+        });
+      case 'ArrowDown':
+        setUserInfo({
+          ...userInfo,
+          hideProjectHeader: false
+        });
+    }
+  }, [c]);
+
   return (
     <>
       <header
@@ -109,10 +169,44 @@ const Topbar: React.FC<TopbarProps> = ({
                 }}
               ></i>
               <div
-                className='hover:font-bold cursor-pointer transform transition duration-300 hover:scale-125 text-red'
+                className='hover:font-bold cursor-pointer transform transition duration-300 hover:scale-125 text-orange'
                 onClick={createOrFetchDateProject}
               >
-                今 日
+                今 {/* 日 */}
+              </div>
+              <div
+                className='hover:font-bold cursor-pointer transform transition duration-300 hover:scale-125 text-red'
+                onClick={createOrFetchWorkProject}
+              >
+                労
+              </div>
+              <div
+                className='hover:font-bold cursor-pointer transform transition duration-300 hover:scale-125 text-blue'
+                onClick={createOrFetchMasterProject}
+              >
+                主
+              </div>
+              <div
+                className='hover:font-bold cursor-pointer transform transition duration-300 hover:scale-125 text-purple'
+                onClick={e => {
+                  createOrFetchProject(e, 'Features');
+                }}
+              >
+                貌
+              </div>
+              <div
+                className='hover:font-bold cursor-pointer transform transition duration-300 hover:scale-125 text-gray-700'
+                onClick={() => {}}
+              >
+                修
+              </div>
+              <div
+                className='hover:font-bold cursor-pointer transform transition duration-300 hover:scale-125 text-gray-600'
+                onClick={e => {
+                  createOrFetchProject(e, 'Bugs');
+                }}
+              >
+                誤
               </div>
               <div className='gap-5'></div>
               <i className='fa-solid fa-pipe fa-xl text-gray-slate'></i>

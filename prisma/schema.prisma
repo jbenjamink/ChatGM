@@ -118,6 +118,7 @@ model Project {
   updatedAt   DateTime @updatedAt
   showCompletedTasks Boolean @default(false)
   showIncompleteTasks Boolean @default(true)
+  links       Link[]
 }
 
 model Task {
@@ -140,6 +141,16 @@ model Task {
   parentTaskId String?
   parentTask  Task?    @relation("parentTask", fields: [parentTaskId], references: [id])
   subTasks    Task[]   @relation("parentTask")
+}
+
+model Link {
+  id          String      @id @default(uuid())
+  name        String
+  url         String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  projectId   String   
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Label {

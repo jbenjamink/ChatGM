@@ -31,7 +31,8 @@ export default function TaskBlock({
   activeTask,
   setActiveTask,
   swapLeft,
-  swapRight
+  swapRight,
+  swap
 }) {
   let retro = true;
   let modern = false;
@@ -245,17 +246,21 @@ export default function TaskBlock({
               className={`flex items-center justify-center text-gray flex-row`}
             >
               <i
+                className={`fa-solid fa-chevron-left cursor-pointer ${
+                  retro ? 'text-gray' : 'text-gray-light'
+                } w-5 h-5 ml-auto mr-8 absolute transform transition duration-300 hover:scale-125 hover:font-bold`}
+                onClick={e => {
+                  e.stopPropagation();
+                  swap(tasks.indexMap[task.id], tasks.head);
+                }}
+              ></i>
+              <i
                 className={`fa-solid fa-arrow-left cursor-pointer ${
                   retro ? 'text-gray' : 'text-gray-light'
                 } w-5 h-5 ml-auto mr-5 absolute transform transition duration-300 hover:scale-125 hover:font-bold`}
                 onClick={e => {
                   e.stopPropagation();
                   swapLeft(tasks.indexMap[task.id]);
-
-                  // client.tasks.postpone.mutate({
-                  //   taskId: task.id,
-                  //   projectName: activeProject.name
-                  // });
                 }}
               ></i>
               <i
@@ -270,6 +275,15 @@ export default function TaskBlock({
                   //   taskId: task.id,
                   //   projectName: activeProject.name
                   // });
+                }}
+              ></i>
+              <i
+                className={`fa-solid fa-chevron-right cursor-pointer ${
+                  retro ? 'text-gray' : 'text-gray-light'
+                } w-5 h-5 mr-auto ml-10 absolute transform transition duration-300 hover:scale-125 hover:font-bold`}
+                onClick={e => {
+                  e.stopPropagation();
+                  swap(tasks.tail, tasks.indexMap[task.id]);
                 }}
               ></i>
             </span>

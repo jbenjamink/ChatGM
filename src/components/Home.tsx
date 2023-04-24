@@ -576,6 +576,7 @@ const Home: NextPage<PageProps> = props => {
             setActiveProject={setActiveProject}
             projects={projects}
             setProjects={setProjects}
+            c={props.c}
           />
           {path != '/tasks' && (
             <div

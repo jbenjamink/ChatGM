@@ -18,7 +18,7 @@ function ProjectListItem({
   );
 
   useEffect(() => {
-    if (project.id == userInfo.activeProjectId) return;
+    // if (project.id == userInfo.activeProjectId) return;
     setHideProjectHeader(userInfo.hideProjectHeader);
     userInfo.update({
       hideProjectHeader: userInfo.hideProjectHeader
